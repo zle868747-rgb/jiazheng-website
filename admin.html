@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>预约管理后台 · 退休者家政联盟</title>
+<style>
+  :root {
+    --primary: #0ea47a;
+    --primary-dark: #0b8a67;
+    --primary-light: #e6f7f1;
+    --ink: #1f2937;
+    --ink-soft: #4b5563;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --danger: #e11d48;
+    --warn: #d97706;
+    --bg-alt: #f6faf8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg-alt);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(135deg, #0d2b24, #12493a);
+    color: #fff;
+    padding: 22px 0;
+    margin-bottom: 26px;
+  }
+  .wrap { width: min(1100px, 94%); margin: 0 auto; }
+  .head-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .brand em { font-style: normal; color: #4fe3b4; }
+  .brand small { display: block; font-size: 12px; font-weight: 400; color: #9fc9bd; letter-spacing: 0; }
+  .head-actions { display: flex; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 0; cursor: pointer; font-family: inherit;
+    padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-ghost { background: rgba(255,255,255,.15); color: #fff; }
+  .btn-ghost:hover { background: rgba(255,255,255,.28); }
+  .btn-sm { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+  .btn-line { background: #fff; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn-line:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-danger { background: #fff; color: var(--danger); border: 1px solid #fecdd3; }
+  .btn-danger:hover { background: #fff1f2; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .stat b { display: block; font-size: 30px; color: var(--primary); }
+  .stat span { color: var(--muted); font-size: 14px; }
+
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+    padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 13.5px; font-family: inherit;
+  }
+  .filter.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .panel-body { padding: 0; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 820px; }
+  th, td { text-align: left; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f4; vertical-align: middle; }
+  th { background: #fafdfb; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  tr:hover td { background: #f9fcfb; }
+  .time { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .phone { color: var(--primary); font-weight: 700; text-decoration: none; }
+  .phone:hover { text-decoration: underline; }
+  .note { color: var(--ink-soft); max-width: 220px; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+  .tag.new { background: #fef3c7; color: #92400e; }
+  .tag.done { background: #e6f7f1; color: #0b8a67; }
+  .ops { display: flex; gap: 6px; white-space: nowrap; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .big { font-size: 42px; display: block; margin-bottom: 12px; }
+  .banner { padding: 12px 18px; font-size: 14px; }
+  .banner.err { background: #fff1f2; color: #9f1239; border-bottom: 1px solid #fecdd3; }
+  .banner.ok { background: #e6f7f1; color: #0b8a67; border-bottom: 1px solid #b7e8d6; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 0 40px; }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: 1fr; }
+  }
+
+  /* 登录层 */
+  .login-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(13,43,36,.6); backdrop-filter: blur(3px);
+    display: grid; place-items: center; padding: 20px;
+  }
+  .login-overlay[hidden] { display: none; }
+  .login-card {
+    background: #fff; border-radius: 18px; padding: 40px 36px;
+    width: min(380px, 100%); text-align: center;
+    box-shadow: 0 24px 60px rgba(6,25,19,.35);
+  }
+  .login-card .lock { font-size: 44px; display: block; margin-bottom: 10px; }
+  .login-card h2 { font-size: 22px; margin-bottom: 8px; }
+  .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .login-card input {
+    width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+    border: 1.5px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    box-sizing: border-box;
+  }
+  .login-card input:focus { outline: none; border-color: var(--primary); }
+  .login-err { color: #e11d48; font-size: 13px; min-height: 20px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="brand">
+      <span>🏠</span>
+      <div>退休者家政<em>联盟</em><small>预约信息管理后台</small></div>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn-ghost" href="/">返回网站首页</a>
+      <button class="btn btn-ghost" id="btnExport">⬇ 导出 Excel</button>
+      <button class="btn btn-primary" id="btnRefresh">🔄 刷新</button>
+    </div>
+  </div>
+</header>
+
+
+  <!-- 登录层 -->
+  <div class="login-overlay" id="loginOverlay" hidden>
+    <div class="login-card">
+      <span class="lock">🔒</span>
+      <h2>后台需要密码</h2>
+      <p>请输入后台密码查看预约信息</p>
+      <input type="password" id="loginPass" placeholder="请输入后台密码" autocomplete="off" />
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center">进入后台</button>
+    </div>
+  </div>
+
+<main class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="stAll">0</b><span>全部预约</span></div>
+    <div class="stat"><b id="stNew">0</b><span>新预约（未处理）</span></div>
+    <div class="stat"><b id="stDone">0</b><span>已处理</span></div>
+  </div>
+
+  <div class="panel">
+    <div id="banner" class="banner" style="display:none"></div>
+    <div class="panel-head">
+      <strong style="font-size:16px">预约记录</strong>
+      <div class="filters">
+        <button class="filter active" data-f="all">全部</button>
+        <button class="filter" data-f="new">新预约</button>
+        <button class="filter" data-f="done">已处理</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="emptyBox" class="empty" style="display:none">
+        <span class="big">📭</span>还没有收到预约，快去网站首页看看表单吧。
+      </div>
+      <table id="tbl" style="display:none">
+        <thead>
+          <tr>
+            <th>提交时间</th><th>称呼</th><th>电话</th><th>城市</th><th>服务项目</th><th>备注</th><th>状态</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>
+  📌 预约数据保存在 <code>data/bookings.json</code> · 本页面需通过「启动网站.bat」运行后访问<br/>
+  如需接收提醒，请保持运行服务的黑色窗口开启，收到新预约会实时显示
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var bookings = [];
+  var currentFilter = "all";
+  var adminPass = "";
+  try { adminPass = sessionStorage.getItem("jzlm_admin_pass") || ""; } catch (e) {}
+
+  var banner = document.getElementById("banner");
+  var tbody = document.getElementById("tbody");
+  var tbl = document.getElementById("tbl");
+  var emptyBox = document.getElementById("emptyBox");
+  var loginOverlay = document.getElementById("loginOverlay");
+  var loginPass = document.getElementById("loginPass");
+  var loginErr = document.getElementById("loginErr");
+
+  function showBanner(msg, type) {
+    banner.style.display = msg ? "block" : "none";
+    banner.textContent = msg || "";
+    banner.className = "banner " + (type || "ok");
+  }
+
+  function showLogin() {
+    loginOverlay.hidden = false;
+    setTimeout(function () { loginPass.focus(); }, 50);
+  }
+  function hideLogin() {
+    loginOverlay.hidden = true;
+    loginErr.textContent = "";
+  }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ "x-admin-pass": adminPass }, opts.headers || {});
+    return fetch(path, opts).then(function (r) {
+      if (r.status === 401) { showLogin(); throw new Error("auth"); }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function load() {
+    api("/api/bookings", { cache: "no-store" })
+      .then(function (data) {
+        bookings = (data && data.bookings) || [];
+        showBanner("");
+        hideLogin();
+        render();
+      })
+      .catch(function (e) {
+        if (e && e.message === "auth") return;
+        showBanner("无法连接接收服务。请先运行「启动网站.bat」，再访问 http://localhost:3000/admin", "err");
+        render();
+      });
+  }
+
+  function filtered() {
+    if (currentFilter === "new") return bookings.filter(function (b) { return b.status === "new"; });
+    if (currentFilter === "done") return bookings.filter(function (b) { return b.status === "done"; });
+    return bookings;
+  }
+
+  function render() {
+    var stNew = bookings.filter(function (b) { return b.status === "new"; }).length;
+    var stDone = bookings.filter(function (b) { return b.status === "done"; }).length;
+    document.getElementById("stAll").textContent = bookings.length;
+    document.getElementById("stNew").textContent = stNew;
+    document.getElementById("stDone").textContent = stDone;
+
+    var list = filtered();
+    var empty = list.length === 0;
+    tbl.style.display = empty ? "none" : "";
+    emptyBox.style.display = empty ? "block" : "none";
+    if (empty) return;
+
+    tbody.innerHTML = list.map(function (b) {
+      var isNew = b.status === "new";
+      return "<tr>" +
+        "<td class='time'>" + esc(b.time) + "</td>" +
+        "<td><strong>" + esc(b.name) + "</strong></td>" +
+        "<td><a class='phone' href='tel:" + esc(b.phone) + "'>" + esc(b.phone) + "</a></td>" +
+        "<td>" + esc(b.city) + "</td>" +
+        "<td>" + esc(b.service) + "</td>" +
+        "<td class='note'>" + esc(b.note || "-") + "</td>" +
+        "<td><span class='tag " + (isNew ? "new" : "done") + "'>" + (isNew ? "新预约" : "已处理") + "</span></td>" +
+        "<td class='ops'>" +
+          "<button class='btn btn-sm btn-line' data-act='toggle' data-id='" + esc(b.id) + "'>" + (isNew ? "标记已处理" : "恢复为新") + "</button>" +
+          "<button class='btn btn-sm btn-danger' data-act='del' data-id='" + esc(b.id) + "'>删除</button>" +
+        "</td>" +
+      "</tr>";
+    }).join("");
+  }
+
+  function act(id, action) {
+    if (action === "del") {
+      if (!window.confirm("确定删除这条预约记录吗？")) return;
+      api("/api/bookings/" + encodeURIComponent(id), { method: "DELETE" })
+        .then(load)
+        .catch(function (e) { if (e && e.message === "auth") return; showBanner("操作失败，请确认服务正在运行", "err"); });
+      return;
+    }
+    var status = action === "done" ? "done" : "new";
+    api("/api/bookings/" + encodeURIComponent(id) + "/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: status })
+    })
+      .then(load)
+      .catch(function (e) { if (e && e.message === "auth") return; showBanner("操作失败，请确认服务正在运行", "err"); });
+  }
+
+  function exportCsv() {
+    if (!bookings.length) { alert("暂无预约记录可导出"); return; }
+    var head = ["提交时间", "称呼", "电话", "城市", "服务项目", "备注", "状态"];
+    var rows = bookings.map(function (b) {
+      return [b.time, b.name, b.phone, b.city, b.service, b.note || "", b.status === "done" ? "已处理" : "新预约"];
+    });
+    var csv = [head].concat(rows).map(function (r) {
+      return r.map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(",");
+    }).join("\r\n");
+    var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    var d = new Date();
+    a.href = URL.createObjectURL(blob);
+    a.download = "预约记录_" + d.getFullYear() + (d.getMonth() + 1) + d.getDate() + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 300);
+  }
+
+  document.getElementById("btnRefresh").addEventListener("click", load);
+  document.getElementById("btnExport").addEventListener("click", exportCsv);
+
+  document.querySelectorAll(".filter").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".filter").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      currentFilter = btn.getAttribute("data-f");
+      render();
+    });
+  });
+
+  tbody.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    act(btn.getAttribute("data-id"), btn.getAttribute("data-act"));
+  });
+
+  // 登录提交
+  document.getElementById("loginBtn").addEventListener("click", tryLogin);
+  loginPass.addEventListener("keydown", function (e) { if (e.key === "Enter") tryLogin(); });
+  function tryLogin() {
+    var v = loginPass.value.trim();
+    if (!v) { loginErr.textContent = "请输入后台密码"; return; }
+    adminPass = v;
+    try { sessionStorage.setItem("jzlm_admin_pass", v); } catch (e) {}
+    loginErr.textContent = "";
+    load();
+  }
+
+  load();
+  setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>

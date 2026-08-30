@@ -1,0 +1,9 @@
+# Render 一键部署配置（可选的免费云平台之一）
+# 用法：在 Render 新建 Blueprint，选择本仓库即可自动部署
+services:
+  - type: web
+    name: jiazheng-website
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server.js
