@@ -1,0 +1,14 @@
+{
+  "name": "jiazheng-website",
+  "version": "1.0.0",
+  "description": "退休者家政联盟 - 家政服务官网与预约接收服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
